@@ -41,7 +41,10 @@ The core innovation of the platform is its **Predictive Analytics Engine**. By m
 │   │   └── supabase.ts    # Single source for DB & Auth
 │   ├── assets/            
 │   │   ├── models/        # .glb files (Buret, Flask, Balance)
-│   │   └── styles/        # Tailwind & Global CSS
+│   │   └── design/        # Design System
+│   │   │   ├── tokens.ts       # THE SOURCE: Colors, Typography, Spacing
+│   │   │   ├── materials.ts    # 3D Specific: Glass, Liquid, Metal definitions
+│   │   │   └── theme.css       # Tailwind/CSS Variables
 │   ├── services/          
 │   │   ├── auth.service.ts   # Login/Logout logic
 │   │   └── lab.service.ts    # ALL database calls (Save log, Get history)
@@ -58,11 +61,15 @@ The core innovation of the platform is its **Predictive Analytics Engine**. By m
 │   ├── composables/       # VUE GLUE (Reactive Logic)
 │   │   ├── useTitration.ts # Main state: volume, pH, titration progress
 │   │   └── useSensor.ts    # Real-time ΔpH/ΔV & AI prediction trigger
+│   ├── lib/               # Utility Functions (e.g. utils.ts)
+│   ├── utils/             # Utility Functions (e.g. math.ts, conversions.ts)
+│   ├── plugins/           # App wide installers run once (e.g. 3d engine)
 │   ├── router/            # Vue Router Configuration (e.g. routes.ts, guards.ts, index.ts)
 │   ├── store/             # Global State (Pinia)
 │   │   └── labState.ts    # Current session data
 │   ├── types/             
 │   │   └── index.ts       # TypeScript interfaces (Session, Log, ChemData)
+│   ├── layouts/           # Layout Components (e.g. MainLayout.vue, AuthLayout.vue)
 │   ├── views/             
 │   │   ├── auth/
 │   │   │   ├── LoginView.vue       # The entry point
@@ -109,8 +116,8 @@ $$\text{Slope} = \frac{\Delta pH}{\Delta V}$$
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-repo/titrasmart-3d.git
-   cd titrasmart-3d
+   git clone https://github.com/ccwebgroup/titrasmart-3d-vue.git
+   cd titrasmart-3d-vue
    ```
 
 2. **Install dependencies:**
