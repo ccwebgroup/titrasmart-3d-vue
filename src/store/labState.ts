@@ -1,16 +1,22 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { labService } from "../services/lab.service";
+import { useAuthState } from "./authState";
 import type { ChemData, Log } from "../types";
 
 /**
  * LabState: The central "Source of Truth" for the titration simulation.
  * It manages the current chemical data, session data, and persistence states.
  */
-export const useLabStore = defineStore("lab", () => {
+export const useLabState = defineStore("lab", () => {
+  const authState = useAuthState();
+
   // --- Persistent State ---
   const sessionId = ref<string | null>(null);
-  const userId = ref<string>("guest_user"); // Simulated ID for initial development
+
+  // The userId is derived from the auth current state
+  const userId = computed(() => authState.user?.id || "guest_user");
+
   const isSaving = ref<boolean>(false);
   const titrationLogs = ref<Log[]>([]);
 

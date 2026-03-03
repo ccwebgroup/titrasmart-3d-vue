@@ -1,4 +1,4 @@
-<script vapor setup lang="ts">
+<script setup lang="ts">
 /**
  * AuthLayout: A premium, high-impact layout for authentication pages.
  * Features a digital twin laboratory background with a centered glassmorphic container.

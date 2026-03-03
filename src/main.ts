@@ -4,10 +4,16 @@ import { createPinia } from "pinia";
 import "./assets/index.css";
 import App from "./App.vue";
 import router from "./router";
+import { useAuthState } from "./store/authState";
 
 const app = createApp(App);
-
-app.use(createPinia());
+const pinia = createPinia();
+app.use(pinia);
 app.use(router);
 
-app.mount("#app");
+// Initialize Auth State
+const authState = useAuthState(pinia);
+authState.initialize().then(async () => {
+  await router.isReady();
+  app.mount("#app");
+});

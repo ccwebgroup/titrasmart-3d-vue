@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 import AuthLayout from "../layouts/AuthLayout.vue";
 import LoginView from "../views/auth/LoginView.vue";
+import LabStageView from "../views/lab/LabStageView.vue";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -26,12 +27,18 @@ export const routes: RouteRecordRaw[] = [
         component: () => import("../views/auth/ForgotPasswordView.vue"),
         meta: { isGuestOnly: true },
       },
+      {
+        path: "/auth/callback",
+        name: "auth-callback",
+        component: () => import("../views/auth/AuthCallbackView.vue"),
+        meta: { isGuestOnly: true },
+      },
     ],
   },
   {
     path: "/lab",
     name: "lab",
-    component: () => import("../views/auth/LoginView.vue"), // Placeholder for now
+    component: LabStageView,
     meta: { requiresAuth: true },
   },
   {

@@ -1,46 +1,66 @@
-<script vapor setup lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { LogIn, Github, Mail, Lock } from 'lucide-vue-next'
+import { LogIn, Mail, Lock } from 'lucide-vue-next'
+import { authService } from '../../services/auth.service'
 
 const router = useRouter()
 const isLoading = ref(false)
+const errorMessage = ref('')
 const email = ref('')
 const password = ref('')
 
 const handleLogin = async () => {
     isLoading.value = true
-    // Mock delay for simulation
-    setTimeout(() => {
+    errorMessage.value = ''
+    try {
+        await authService.signInWithEmail(email.value, password.value)
+        router.push('/lab')
+    } catch (error: unknown) {
+        console.error('Login failed:', error)
+        errorMessage.value = error instanceof Error ? error.message : 'Identity verification failed. Please check your credentials.'
+    } finally {
         isLoading.value = false
-        console.log('Login successful')
-        // router.push('/')
-    }, 1500)
+    }
+}
+
+const handleGoogleLogin = async () => {
+    try {
+        await authService.signInWithGoogle()
+    } catch (error: unknown) {
+        console.error('Google login failed:', error)
+        errorMessage.value = 'Failed to connect with Google.'
+    }
 }
 </script>
 
 <template>
     <div class="space-y-6">
         <div class="flex flex-col space-y-2 text-center">
-            <h2 class="text-xl font-semibold tracking-tight text-white">Welcome back, Scientist</h2>
-            <p class="text-sm text-slate-400">Enter your credentials to access the virtual lab</p>
+            <h2 class="text-xl font-semibold tracking-tight text-white">Welcome Back</h2>
+            <p class="text-sm text-slate-400">Sign in to your account</p>
         </div>
 
         <form @submit.prevent="handleLogin" class="grid gap-4">
+            <div v-if="errorMessage" class="rounded-md bg-red-500/10 p-3 text-xs text-red-500 border border-red-500/20">
+                {{ errorMessage }}
+            </div>
+
             <div class="grid gap-2">
-                <label for="email" class="text-xs font-medium uppercase tracking-wider text-slate-500 ml-1">Laboratory
-                    ID / Email</label>
+                <label for="email" class="text-xs font-medium uppercase tracking-wider text-slate-500 ml-1">Email Address</label>
                 <div class="relative">
                     <Mail class="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-                    <input v-model="email" id="email" type="email" placeholder="sc-001@titrasmart.edu"
+                    <input v-model="email" id="email" type="email" placeholder="name@example.com"
                         class="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-colors"
                         required />
                 </div>
             </div>
 
             <div class="grid gap-2">
-                <label for="password" class="text-xs font-medium uppercase tracking-wider text-slate-500 ml-1">Chemical
-                    Key / Password</label>
+                <div class="flex items-center justify-between">
+                    <label for="password" class="text-xs font-medium uppercase tracking-wider text-slate-500 ml-1">Password</label>
+                    <a href="/forgot-password" class="text-xs text-blue-400 hover:underline">Forgot?</a>
+                </div>
                 <div class="relative">
                     <Lock class="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                     <input v-model="password" id="password" type="password"
@@ -54,7 +74,7 @@ const handleLogin = async () => {
                 <LogIn v-if="!isLoading" class="mr-2 h-4 w-4" />
                 <span v-if="isLoading"
                     class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                {{ isLoading ? 'Synchronizing State...' : 'Start Simulation Session' }}
+                {{ isLoading ? 'Signing in...' : 'Sign In' }}
             </button>
         </form>
 
@@ -63,39 +83,32 @@ const handleLogin = async () => {
                 <span class="w-full border-t border-white/10" />
             </div>
             <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-transparent px-2 text-slate-500">Collaborative SSO</span>
+                <span class="bg-transparent px-2 text-slate-500">Or continue with</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <button
-                class="flex h-10 items-center justify-center rounded-md border border-white/10 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10">
-                <Github class="mr-2 h-4 w-4" />
-                GitHub
-            </button>
-            <button
-                class="flex h-10 items-center justify-center rounded-md border border-white/10 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10">
-                <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                    <path
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        fill="#4285F4" />
-                    <path
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        fill="#34A853" />
-                    <path
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        fill="#FBBC05" />
-                    <path
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        fill="#EA4335" />
-                </svg>
-                Google
-            </button>
-        </div>
+        <button @click="handleGoogleLogin"
+            class="flex h-10 w-full items-center justify-center rounded-md border border-white/10 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10">
+            <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4" />
+                <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853" />
+                <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05" />
+                <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335" />
+            </svg>
+            Google
+        </button>
 
         <p class="px-8 text-center text-sm text-slate-500">
-            Don't have a laboratory ID?
-            <a href="/register" class="underline underline-offset-4 hover:text-blue-400">Join Institution</a>
+            New to TitraSmart?
+            <a href="/register" class="underline underline-offset-4 hover:text-blue-400">Create an account</a>
         </p>
     </div>
 </template>
