@@ -12,10 +12,12 @@ import { LabMaterials } from '@/assets/design/materials'
  */
 interface Props {
     liquidLevel?: number
+    liquidColor?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    liquidLevel: 0.1
+    liquidLevel: 0.1,
+    liquidColor: '#F472B6' // Default pink
 })
 
 // Stirrer Rotation
@@ -58,14 +60,14 @@ const liquidRadiusTop = computed(() => 0.35 - (props.liquidLevel * 0.25)) // Nar
         <TresGroup v-if="liquidLevel > 0">
             <TresMesh :position="[0, liquidY, 0]">
                 <TresCylinderGeometry :args="[liquidRadiusTop, liquidRadiusBottom, liquidHeight, 32]" />
-                <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#F472B6" :opacity="0.6"
+                <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" :color="liquidColor" :opacity="0.6"
                     :transparent="true" />
             </TresMesh>
 
             <!-- Liquid Surface (Meniscus) -->
             <TresMesh :position="[0, 0.05 + liquidHeight, 0]">
                 <TresCylinderGeometry :args="[liquidRadiusTop + 0.01, liquidRadiusTop, 0.01, 32]" />
-                <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#DB2777" :opacity="0.8"
+                <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" :color="liquidColor" :opacity="0.8"
                     :transparent="true" />
             </TresMesh>
         </TresGroup>

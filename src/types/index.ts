@@ -8,20 +8,18 @@ export interface ChemData {
 export interface Log {
   id?: string;
   session_id: string;
-  user_id: string;
-  volume: number;
-  ph: number;
-  slope: number;
-  ai_action: string;
+  user_id: string; // From auth.users(id)
+  vol_added_ml: number;
+  ph_value: number;
+  slope_value: number;
   created_at?: string;
 }
 
 export interface Session {
   id?: string;
   user_id: string;
-  experiment_type: string;
-  status: "active" | "completed" | "failed";
-  lab_state: any; // Dynamic JSON state
+  khp_mass_g: number;
+  target_molarity_naoh: number;
+  is_completed: boolean;
   created_at?: string;
-  updated_at?: string;
 }

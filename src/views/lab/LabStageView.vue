@@ -11,13 +11,23 @@ import { LogOut, User, Beaker } from 'lucide-vue-next'
 
 const router = useRouter()
 const authState = useAuthState()
+const labState = useLabState()
+
 const userName = computed(() => authState.displayName)
 const isLoading = ref(true)
 
-// Simulation State
-const buretVolume = ref(0.85) // 85% full
+// Simulation State (Partial local for UI/3D handles, Chemical state is in labState)
 const stopcockAngle = ref(0) // Closed
-const flaskVolume = ref(0.1) // Initial liquid in flask
+
+// Sync local handles to labState titration if needed, or bind directly
+const currentPH = computed(() => labState.currentChemData.ph)
+const buretVolume = computed({
+  get: () => labState.titration.currentVolume / 50, // Normalized for 3D/Slider
+  set: (val) => {
+    labState.titration.currentVolume = val * 50
+  }
+})
+const flaskVolume = ref(0.1) // 3D Visual level, independent of chemistry volume for now
 
 onMounted(async () => {
   // Simulate loading 3D assets
@@ -55,7 +65,8 @@ const handleLogout = async () => {
 
           <!-- Unified Titration Station Setup -->
           <TitrationStation :position="[0, 0.951, 0]" v-model:buretVolume="buretVolume"
-            v-model:flaskVolume="flaskVolume" :stopcockAngle="stopcockAngle" />
+            v-model:flaskVolume="flaskVolume" :stopcockAngle="stopcockAngle"
+            :indicatorColor="labState.titration.indicatorColor" />
         </TresCanvas>
       </template>
       <template #fallback>
@@ -134,8 +145,10 @@ const handleLogout = async () => {
 
         <div class="p-4 rounded-xl bg-slate-900/60 border border-white/10 backdrop-blur-xl w-64">
           <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Current Protocol</p>
-          <h3 class="text-white font-semibold flex items-center">
-            Standardization of NaOH with KHP
+          <h3 class="text-white font-semibold flex items-center justify-between">
+            <span>NaOH + KHP</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">pH {{ currentPH.toFixed(2)
+            }}</span>
           </h3>
         </div>
       </div>

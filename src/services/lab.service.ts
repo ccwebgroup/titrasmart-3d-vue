@@ -9,15 +9,19 @@ export class LabService {
   /**
    * Initializes a new session for a user.
    */
-  async startSession(userId: string, experimentType: string): Promise<string | null> {
+  async startSession(
+    userId: string,
+    khpMass: number,
+    targetMolarity: number,
+  ): Promise<string | null> {
     const { data, error } = await supabase
-      .from("sessions")
+      .from("lab_sessions")
       .insert([
         {
           user_id: userId,
-          experiment_type: experimentType,
-          status: "active",
-          lab_state: {},
+          khp_mass_g: khpMass,
+          target_molarity_naoh: targetMolarity,
+          is_completed: false,
         },
       ])
       .select("id")
@@ -48,13 +52,11 @@ export class LabService {
   /**
    * Records the final result and completes the session.
    */
-  async completeSession(sessionId: string, finalState: any): Promise<boolean> {
+  async completeSession(sessionId: string): Promise<boolean> {
     const { error } = await supabase
-      .from("sessions")
+      .from("lab_sessions")
       .update({
-        status: "completed",
-        lab_state: finalState,
-        updated_at: new Date().toISOString(),
+        is_completed: true,
       })
       .eq("id", sessionId);
 

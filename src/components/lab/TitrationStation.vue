@@ -17,6 +17,7 @@ interface Props {
   buretVolume: number
   flaskVolume: number
   stopcockAngle: number
+  indicatorColor: string
 }
 
 const props = defineProps<Props>()
@@ -65,7 +66,7 @@ onBeforeRender(({ delta }: { delta: number }) => {
     <LabBuret :liquid-level="buretVolume" :stopcock-rotation="stopcockAngle" />
 
     <!-- Flask positioned on the stand base -->
-    <ErlenmeyerFlask :liquid-level="flaskVolume" :position="[0, 0.051, 0]" />
+    <ErlenmeyerFlask :liquid-level="flaskVolume" :position="[0, 0.051, 0]" :liquidColor="indicatorColor" />
 
     <!-- Falling Drops -->
     <TresGroup>
