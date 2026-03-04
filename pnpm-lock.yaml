@@ -23,6 +23,12 @@ importers:
 
   .:
     dependencies:
+      '@babylonjs/core':
+        specifier: ^8.53.1
+        version: 8.53.1
+      '@babylonjs/loaders':
+        specifier: ^8.53.1
+        version: 8.53.1(@babylonjs/core@8.53.1)(babylonjs-gltf2interface@8.53.1)
       '@supabase/supabase-js':
         specifier: ^2.98.0
         version: 2.98.0
@@ -38,6 +44,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      gsap:
+        specifier: ^3.14.2
+        version: 3.14.2
       lucide-vue-next:
         specifier: ^0.576.0
         version: 0.576.0(vue@3.6.0-beta.7(typescript@5.9.3))
@@ -316,6 +325,15 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@babylonjs/core@8.53.1':
+    resolution: {integrity: sha512-heC71STxWHl9XPVcmLRHj4HceBeQb7sZiIAmxrDzZEjO7XGa6TNWUL6uzQ5Vcgy4zXoPxLTVuTVodj4wl7hCMw==}
+
+  '@babylonjs/loaders@8.53.1':
+    resolution: {integrity: sha512-hV0CTYVol0wk4tbP9B72/Wjc4xuc4T4Ntf19598PYK9/7vs4zer0vF3sh7gGbC8ADn9fpEbaK4la4Lmw7bpgMQ==}
+    peerDependencies:
+      '@babylonjs/core': ^8.0.0
+      babylonjs-gltf2interface: ^8.0.0
 
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
@@ -1555,6 +1573,9 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
+  babylonjs-gltf2interface@8.53.1:
+    resolution: {integrity: sha512-uMmBm/CEJPH2LbY+0WkK82AC7C1hWCFnYyL65NEmGTUZ0zlAjIfuM7GKRcqFTi3LUvnplBGhz2Arxfz2GJzH0g==}
+
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
@@ -1989,6 +2010,9 @@ packages:
 
   glsl-tokenizer@2.1.5:
     resolution: {integrity: sha512-XSZEJ/i4dmz3Pmbnpsy3cKh7cotvFlBiZnDOwnj/05EwNp2XrhQ4XKJxT7/pDt4kp4YcpRSKz8eTV7S+mwV6MA==}
+
+  gsap@3.14.2:
+    resolution: {integrity: sha512-P8/mMxVLU7o4+55+1TCnQrPmgjPKnwkzkXOK1asnR9Jg2lna4tEY5qBJjMmAaOBDDZWtlRjBXjLa0w53G/uBLA==}
 
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
@@ -3416,6 +3440,13 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@babylonjs/core@8.53.1': {}
+
+  '@babylonjs/loaders@8.53.1(@babylonjs/core@8.53.1)(babylonjs-gltf2interface@8.53.1)':
+    dependencies:
+      '@babylonjs/core': 8.53.1
+      babylonjs-gltf2interface: 8.53.1
+
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.1.0
@@ -4503,6 +4534,8 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
 
+  babylonjs-gltf2interface@8.53.1: {}
+
   balanced-match@1.0.2: {}
 
   balanced-match@4.0.4: {}
@@ -4932,6 +4965,8 @@ snapshots:
   glsl-tokenizer@2.1.5:
     dependencies:
       through2: 0.6.5
+
+  gsap@3.14.2: {}
 
   hasown@2.0.2:
     dependencies:

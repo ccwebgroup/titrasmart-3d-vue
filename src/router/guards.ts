@@ -1,3 +1,4 @@
+import { watch } from "vue";
 import type { Router, RouteLocationNormalized } from "vue-router";
 import { useAuthState } from "../store/authState";
 
@@ -11,7 +12,17 @@ export async function setupAuthGuard(to: RouteLocationNormalized, from: RouteLoc
   // Failsafe: if navigation happens while initializing, wait for it
   if (authState.isLoading) {
     console.log(`[Router] Auth still initializing, waiting for ${to.path}...`);
-    // This is rare since we wait in main.ts, but safe to have
+    await new Promise<void>((resolve) => {
+      const unwatch = watch(
+        () => authState.isLoading,
+        (loading) => {
+          if (!loading) {
+            unwatch();
+            resolve();
+          }
+        },
+      );
+    });
   }
 
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);

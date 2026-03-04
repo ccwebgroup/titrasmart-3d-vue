@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { labService } from "../services/lab.service";
 import { useAuthState } from "./authState";
 import { useTitration } from "../composables/useTitration";
+import { useDebounceFn } from "@vueuse/core";
 import type { ChemData, Log } from "../types";
 
 /**
@@ -29,12 +30,30 @@ export const useLabState = defineStore("lab", () => {
     isEndEndpoint: titration.currentPH.value >= 8.2,
   }));
 
+  const flaskColor = computed(() => titration.indicatorColor.value);
+
+  // --- Persistence & Logging ---
+  const logToSupabase = useDebounceFn(async () => {
+    if (!sessionId.value) return;
+    await addTitrantDrop(0, titration.currentPH.value, titration.slope.value);
+  }, 500);
+
+  watch(
+    () => titration.currentVolume.value,
+    () => {
+      logToSupabase();
+    },
+  );
+
   // --- Actions ---
   /**
    * Initializes a session for the user when they enter the lab.
    */
-  async function initializeLabSession(experimentType: string = "NaOH-KHP") {
-    const id = await labService.startSession(userId.value, experimentType);
+  async function initializeLabSession() {
+    const id = await labService.getOrCreateSession(
+      titration.massKHP.value,
+      titration.molarityNaOH.value,
+    );
     if (id) {
       sessionId.value = id;
       console.log(`[TitraSmart] Session ${id} initialized.`);
@@ -46,9 +65,10 @@ export const useLabState = defineStore("lab", () => {
    */
   async function addTitrantDrop(deltaV: number, newPh: number, slope: number) {
     // 1. Update Reactive State (UI Reflects immediately)
-    currentChemData.value.volume += deltaV;
-    currentChemData.value.ph = newPh;
-    currentChemData.value.slope = slope;
+    // titration.currentVolume.value += deltaV; // No need, slider/addVolume does this
+    // We just ensure currentChemData (which is computed) has latest ph/slope
+    // Actually, titration is already updating these.
+    // This method should mainly focus on the logging part as it's the bridge to persistence.
 
     // Check for "Endpoint" transition (Placeholder logic)
     if (newPh >= 8.2 && currentChemData.value.ph < 8.2) {
@@ -60,10 +80,9 @@ export const useLabState = defineStore("lab", () => {
       titrationLogs.value.push({
         session_id: sessionId.value,
         user_id: userId.value,
-        volume: currentChemData.value.volume,
-        ph: newPh,
-        slope: slope,
-        ai_action: "Drop added",
+        vol_added_ml: currentChemData.value.volume,
+        ph_value: newPh,
+        slope_value: slope,
       });
 
       // 3. Batch Persistence strategy (Every 0.1 mL or every significant transition)
@@ -100,15 +119,17 @@ export const useLabState = defineStore("lab", () => {
     if (!sessionId.value) return;
 
     await persistLogs(); // Flush remaining
-    await labService.completeSession(sessionId.value, currentChemData.value);
+    await labService.completeSession(sessionId.value);
     console.log(`[TitraSmart] Session ${sessionId.value} completed.`);
   }
 
   return {
+    titration,
     sessionId,
     userId,
     isSaving,
     currentChemData,
+    flaskColor,
     initializeLabSession,
     addTitrantDrop,
     persistLogs,

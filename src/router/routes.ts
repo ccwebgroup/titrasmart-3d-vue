@@ -42,6 +42,11 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/v2",
+    name: "lab-v2",
+    component: () => import("../views/lab/BabylonLabView.vue"),
+  },
+  {
     path: "/",
     redirect: "/lab",
   },

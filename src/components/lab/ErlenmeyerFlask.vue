@@ -41,13 +41,13 @@ const liquidRadiusTop = computed(() => 0.35 - (props.liquidLevel * 0.25)) // Nar
         <!-- Flask Body (Conical) -->
         <TresMesh :position="[0, 0.3, 0]">
             <TresCylinderGeometry :args="[0.1, 0.4, 0.6, 32]" />
-            <TresMeshStandardMaterial v-bind="LabMaterials.glass" />
+            <TresMeshPhysicalMaterial v-bind="LabMaterials.glass" />
         </TresMesh>
 
         <!-- Flask Neck -->
         <TresMesh :position="[0, 0.75, 0]">
             <TresCylinderGeometry :args="[0.1, 0.1, 0.3, 32]" />
-            <TresMeshStandardMaterial v-bind="LabMaterials.glass" />
+            <TresMeshPhysicalMaterial v-bind="LabMaterials.glass" />
         </TresMesh>
 
         <!-- Magnetic Stirrer (Capsule) -->
@@ -65,11 +65,20 @@ const liquidRadiusTop = computed(() => 0.35 - (props.liquidLevel * 0.25)) // Nar
             </TresMesh>
 
             <!-- Liquid Surface (Meniscus) -->
-            <TresMesh :position="[0, 0.05 + liquidHeight, 0]">
-                <TresCylinderGeometry :args="[liquidRadiusTop + 0.01, liquidRadiusTop, 0.01, 32]" />
-                <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" :color="liquidColor" :opacity="0.8"
-                    :transparent="true" />
-            </TresMesh>
+            <TresGroup :position="[0, 0.05 + liquidHeight, 0]">
+                <!-- Rim/Edge -->
+                <TresMesh>
+                    <TresCylinderGeometry :args="[liquidRadiusTop + 0.005, liquidRadiusTop, 0.01, 32, 1, true]" />
+                    <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" :color="liquidColor" :opacity="0.8"
+                        :transparent="true" />
+                </TresMesh>
+                <!-- Concave Dip (Inverted Cone) -->
+                <TresMesh :position="[0, -0.005, 0]" :rotation="[Math.PI, 0, 0]">
+                    <TresConeGeometry :args="[liquidRadiusTop + 0.005, 0.015, 32]" />
+                    <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" :color="liquidColor" :opacity="0.8"
+                        :transparent="true" />
+                </TresMesh>
+            </TresGroup>
         </TresGroup>
     </TresGroup>
 </template>

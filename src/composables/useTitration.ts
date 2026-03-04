@@ -12,14 +12,22 @@ export function useTitration() {
   const volInitial = ref(50); // mL of water added to dissolving KHP
 
   const currentVolume = ref(0); // mL of NaOH added
-  const currentPH = ref(7.0);
-  const slope = ref(0);
 
-  // History for slope calculation (dpH/dV)
+  const currentPH = computed(() => {
+    return TitrationEngine.calculatePH(
+      currentVolume.value,
+      massKHP.value,
+      molarityNaOH.value,
+      volInitial.value,
+    );
+  });
+
+  // For slope, we still want to track the "previous" state to calculate deltaPH/deltaV
+  const slope = ref(0);
   const history = ref<{ vol: number; ph: number }[]>([]);
 
   /**
-   * Updates the volume and calculates resulting pH/slope.
+   * Updates the volume. pH and slope will update reactively.
    */
   function addVolume(deltaV: number) {
     const oldVol = currentVolume.value;
@@ -27,21 +35,16 @@ export function useTitration() {
 
     currentVolume.value += deltaV;
 
-    // Calculate new pH
-    const newPH = TitrationEngine.calculatePH(
+    // Update slope manually here for discrete additions (drops)
+    slope.value = TitrationEngine.calculateSlope(
+      oldVol,
+      oldPH,
       currentVolume.value,
-      massKHP.value,
-      molarityNaOH.value,
-      volInitial.value,
+      currentPH.value,
     );
 
-    currentPH.value = newPH;
-
-    // Calculate slope
-    slope.value = TitrationEngine.calculateSlope(oldVol, oldPH, currentVolume.value, newPH);
-
     // Keep a small history for AI analysis
-    history.value.push({ vol: currentVolume.value, ph: newPH });
+    history.value.push({ vol: currentVolume.value, ph: currentPH.value });
     if (history.value.length > 20) history.value.shift();
   }
 
@@ -58,10 +61,28 @@ export function useTitration() {
 
     // Transition from white to deep pink (#F472B6 -> #DB2777)
     // For simplicity, we interpolate between transparent/white and a target pink
-    if (intensity < 0.1) return "#FBCFE8"; // Very pale pink
+    if (intensity < 0.1) return "#FFC0CB"; // Pale pink (Endpoint flip)
     if (intensity < 0.5) return "#F472B6"; // Standard pink
     return "#DB2777"; // Deep magenta (over-titrated)
   });
+
+  /**
+   * Applies continuous flow from the buret based on valve state.
+   * @param delta - Frame delta time in seconds.
+   * @param valveAngle - Current stopcock angle (0 to PI/2).
+   */
+  function applyValveFlow(delta: number, valveAngle: number) {
+    if (valveAngle < 0.01) return; // Closed or jitter
+
+    // Max flow rate: 0.5 mL/s at full open (approx 10 drops/sec)
+    const MAX_FLOW = 0.5;
+    const openRatio = valveAngle / (Math.PI / 2);
+    const deltaV = MAX_FLOW * openRatio * delta;
+
+    if (currentVolume.value + deltaV <= 50) {
+      addVolume(deltaV);
+    }
+  }
 
   return {
     massKHP,
@@ -71,5 +92,6 @@ export function useTitration() {
     slope,
     indicatorColor,
     addVolume,
+    applyValveFlow,
   };
 }

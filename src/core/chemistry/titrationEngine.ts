@@ -37,8 +37,15 @@ export class TitrationEngine {
     if (molesNaOH < molesKHP) {
       const molesAcid = molesKHP - molesNaOH;
       const molesSalt = molesNaOH;
+      // Initial pH for capping
+      const concentrationKHP_initial = molesKHP / (volInitial_mL / 1000);
+      const initialPH = -Math.log10(Math.sqrt(KA_KHP * concentrationKHP_initial));
+
       // Henderson-Hasselbalch: pH = pKa + log([Salt]/[Acid])
-      return -Math.log10(KA_KHP) + Math.log10(molesSalt / molesAcid);
+      const hhPH = -Math.log10(KA_KHP) + Math.log10(molesSalt / molesAcid);
+
+      // Ensure pH is never lower than initial state during addition of base
+      return Math.max(initialPH, hhPH);
     }
 
     // 3. Equivalence Point

@@ -37,15 +37,15 @@ const volumeInML = computed(() => (props.liquidLevel * 50).toFixed(2))
 </script>
 
 <template>
-  <TresGroup :position="[0, 2, 0]">
+  <TresGroup :position="[0, 2, 0]" :rotation="[0, 0, 0]">
     <!-- Main Buret Body (Glass Tube) -->
     <TresMesh :position="[0, 2, 0]">
       <TresCylinderGeometry :args="[0.05, 0.05, 4, 32]" />
-      <TresMeshStandardMaterial v-bind="LabMaterials.glass" />
+      <TresMeshPhysicalMaterial v-bind="LabMaterials.glass" />
     </TresMesh>
 
     <!-- Scale Markings (High Fidelity Texture) -->
-    <TresMesh :position="[0.001, 2, 0]">
+    <TresMesh :position="[0, 2, 0]">
       <TresCylinderGeometry :args="[0.051, 0.051, 4, 32, 1, true]" />
       <TresMeshStandardMaterial :map="gradTexture" transparent :side="2" :opacity="0.8" />
     </TresMesh>
@@ -53,7 +53,7 @@ const volumeInML = computed(() => (props.liquidLevel * 50).toFixed(2))
     <!-- Buret Tip (Inverted Cone) -->
     <TresMesh :position="[0, -0.2, 0]" :rotation="[Math.PI, 0, 0]">
       <TresConeGeometry :args="[0.05, 0.4, 32]" />
-      <TresMeshStandardMaterial v-bind="LabMaterials.glass" />
+      <TresMeshPhysicalMaterial v-bind="LabMaterials.glass" />
     </TresMesh>
 
     <!-- Stopcock Assembly -->
@@ -61,7 +61,7 @@ const volumeInML = computed(() => (props.liquidLevel * 50).toFixed(2))
       <!-- Stopcock Housing -->
       <TresMesh :rotation="[0, 0, Math.PI / 2]">
         <TresCylinderGeometry :args="[0.03, 0.03, 0.12, 16]" />
-        <TresMeshStandardMaterial v-bind="LabMaterials.glass" :opacity="0.6" />
+        <TresMeshPhysicalMaterial v-bind="LabMaterials.glass" :opacity="0.6" />
       </TresMesh>
 
       <!-- Stopcock Handle (Valve) -->
@@ -79,16 +79,32 @@ const volumeInML = computed(() => (props.liquidLevel * 50).toFixed(2))
 
     <!-- Liquid (Titrant) -->
     <TresGroup v-if="liquidLevel > 0">
-      <!-- Main Liquid Body -->
-      <TresMesh :position="[0, liquidY, 0]">
-        <TresCylinderGeometry :args="[0.042, 0.042, liquidHeight, 32]" />
-        <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#3B82F6" :opacity="0.7" :transparent="true" />
+      <!-- 1. Tip Liquid (Always full if level > 0) -->
+      <TresMesh :position="[0, -0.2, 0]" :rotation="[Math.PI, 0, 0]">
+        <TresConeGeometry :args="[0.042, 0.4, 32]" />
+        <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#3B82F6" :opacity="0.6" :transparent="true" />
       </TresMesh>
 
-      <!-- Meniscus Realism (Top Curve) -->
-      <TresMesh :position="[0, meniscusY, 0]">
-        <TresCylinderGeometry :args="[0.045, 0.042, 0.02, 32]" />
-        <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#2563EB" :opacity="0.9" :transparent="true" />
+      <!-- 2. Main Liquid Body -->
+      <TresMesh :position="[0, liquidY, 0]">
+        <TresCylinderGeometry :args="[0.042, 0.042, liquidHeight, 32]" />
+        <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#3B82F6" :opacity="0.6" :transparent="true" />
+      </TresMesh>
+
+      <!-- 3. Meniscus (Concave Top Curve) -->
+      <TresGroup :position="[0, meniscusY, 0]">
+        <!-- Rim -->
+        <TresMesh>
+          <TresCylinderGeometry :args="[0.042, 0.042, 0.01, 32, 1, true]" />
+          <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#2563EB" :opacity="0.8"
+            :transparent="true" />
+        </TresMesh>
+        <!-- Concave Dip (Inverted Cone) -->
+        <TresMesh :position="[0, -0.005, 0]" :rotation="[Math.PI, 0, 0]">
+          <TresConeGeometry :args="[0.042, 0.015, 32]" />
+          <TresMeshStandardMaterial v-bind="LabMaterials.liquidBase" color="#1E40AF" :opacity="0.8"
+            :transparent="true" />
+        </TresMesh>
 
         <!-- Volume Label Overlay -->
         <Html center transform :position="[0.15, 0, 0]" :distance-factor="1">
@@ -97,7 +113,7 @@ const volumeInML = computed(() => (props.liquidLevel * 50).toFixed(2))
         </div>
 
         </Html>
-      </TresMesh>
+      </TresGroup>
     </TresGroup>
   </TresGroup>
 </template>

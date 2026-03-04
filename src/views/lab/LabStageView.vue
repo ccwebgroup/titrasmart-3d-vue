@@ -1,35 +1,55 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { PCFShadowMap } from 'three'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import { useAuthState } from '@/store/authState'
+import { useLabState } from '@/store/labState'
 import LabBench from '@/components/lab/LabBench.vue'
-import TitrationStation from '@/components/lab/TitrationStation.vue'
-import { LogOut, User, Beaker } from 'lucide-vue-next'
+import { LogOut, User, Beaker, Brain } from 'lucide-vue-next'
+import { evaluateTitrationState } from '@/services/tutor.service'
+import { useSandboxStore } from '@/store/sandboxStore'
+import StockroomSidebar from '@/components/hud/StockroomSidebar.vue'
+import DraggableVessel from '@/components/lab/DraggableVessel.vue'
+// GSAP animation wired for future mesh-level pour integration
+// import { animatePour } from '@/utils/animations'
 
 const router = useRouter()
 const authState = useAuthState()
 const labState = useLabState()
+const sandbox = useSandboxStore()
 
 const userName = computed(() => authState.displayName)
 const isLoading = ref(true)
 
-// Simulation State (Partial local for UI/3D handles, Chemical state is in labState)
-const stopcockAngle = ref(0) // Closed
-
-// Sync local handles to labState titration if needed, or bind directly
-const currentPH = computed(() => labState.currentChemData.ph)
-const buretVolume = computed({
-  get: () => labState.titration.currentVolume / 50, // Normalized for 3D/Slider
-  set: (val) => {
-    labState.titration.currentVolume = val * 50
-  }
+// --- Tutor AI Feedback ---
+const prevPH = ref(7.0)
+const tutorFeedback = computed(() => {
+  return evaluateTitrationState(
+    labState.currentChemData.slope,
+    labState.currentChemData.ph,
+    prevPH.value,
+  )
 })
-const flaskVolume = ref(0.1) // 3D Visual level, independent of chemistry volume for now
+
+// Track previous pH separately to avoid side-effects in computed
+
+watch(() => labState.currentChemData.ph, (_, oldPh) => {
+  prevPH.value = oldPh ?? 7.0
+})
+
+const tutorColorMap: Record<string, string> = {
+  stable: 'border-emerald-500/30 text-emerald-400',
+  caution: 'border-amber-500/30 text-amber-400',
+  warning: 'border-red-500/40 text-red-400 animate-pulse',
+  error: 'border-red-600/60 text-red-500 animate-pulse',
+}
 
 onMounted(async () => {
+  // Initialize Simulation Session
+  await labState.initializeLabSession()
+
   // Simulate loading 3D assets
   setTimeout(() => {
     isLoading.value = false
@@ -39,6 +59,11 @@ onMounted(async () => {
 const handleLogout = async () => {
   await authState.signOut()
   router.push('/login')
+}
+
+// --- Sandbox Transfer ---
+function handleTransfer(sourceId: string, targetId: string) {
+  sandbox.transferContents(sourceId, targetId, 10) // Default 10mL pour
 }
 </script>
 
@@ -63,10 +88,9 @@ const handleLogout = async () => {
 
           <LabBench />
 
-          <!-- Unified Titration Station Setup -->
-          <TitrationStation :position="[0, 0.951, 0]" v-model:buretVolume="buretVolume"
-            v-model:flaskVolume="flaskVolume" :stopcockAngle="stopcockAngle"
-            :indicatorColor="labState.titration.indicatorColor" />
+          <!-- Sandbox Vessels (Dynamic) -->
+          <DraggableVessel v-for="vessel in sandbox.activeVessels" :key="vessel.id" :vessel="vessel"
+            :position="[vessel.position[0], 0.951, vessel.position[2]]" @triggerTransfer="handleTransfer" />
         </TresCanvas>
       </template>
       <template #fallback>
@@ -107,50 +131,33 @@ const handleLogout = async () => {
         </div>
       </div>
 
-      <!-- Simulation State (Bottom Left) -->
       <div class="absolute bottom-6 left-6 pointer-events-auto space-y-4">
-        <!-- Titration Progress -->
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-white/10 backdrop-blur-xl w-64">
-          <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3">Titrant Volume</p>
-          <div class="space-y-2">
-            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-              <span>0.00 mL</span>
-              <span>50.00 mL</span>
-            </div>
-            <input type="range" v-model.number="buretVolume" min="0" max="1" step="0.01"
-              class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" />
-            <div class="flex justify-between items-center mt-1">
-              <span class="text-xs text-blue-400 font-bold font-mono">{{ (buretVolume * 50).toFixed(2) }} mL</span>
-              <span class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Status: Stable</span>
-            </div>
-          </div>
+        <!-- Sandbox Info/Status placeholder if needed -->
+        <div class="p-4 rounded-xl bg-slate-900/60 border border-white/10 backdrop-blur-xl w-64 shadow-2xl">
+          <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Sandbox Mode</p>
+          <p class="text-xs text-slate-300">Drag glassware together to mix chemicals. Use the Stockroom to add more
+            equipment.</p>
         </div>
+      </div>
 
-        <!-- Stopcock Control -->
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-white/10 backdrop-blur-xl w-64">
-          <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-3">Valve Control</p>
-          <div class="space-y-3">
-            <input type="range" v-model.number="stopcockAngle" min="0" :max="Math.PI / 2" step="0.01"
-              class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
-            <div class="flex justify-between items-center">
-              <span class="text-[10px] font-bold uppercase tracking-widest"
-                :class="stopcockAngle > 0.1 ? 'text-indigo-400' : 'text-slate-500'">
-                {{ stopcockAngle > 0.1 ? 'FLOW ACTIVE' : 'VALVE CLOSED' }}
-              </span>
-              <span class="text-xs text-slate-300 font-mono">{{ ((stopcockAngle / (Math.PI / 2)) * 100).toFixed(0)
-                }}%</span>
-            </div>
+      <!-- AI Tutor Feedback (Bottom Right) -->
+      <div class="absolute bottom-6 right-6 pointer-events-auto w-72">
+        <div class="p-4 rounded-xl bg-slate-900/70 border backdrop-blur-xl transition-all duration-500"
+          :class="tutorColorMap[tutorFeedback.level]">
+          <div class="flex items-center space-x-2 mb-2">
+            <Brain class="h-4 w-4" />
+            <p class="text-[10px] uppercase font-bold tracking-widest">AI Tutor</p>
           </div>
+          <p class="text-sm font-medium text-white/90 leading-relaxed">
+            <span class="mr-1">{{ tutorFeedback.icon }}</span>
+            {{ tutorFeedback.message }}
+          </p>
         </div>
+      </div>
 
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-white/10 backdrop-blur-xl w-64">
-          <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Current Protocol</p>
-          <h3 class="text-white font-semibold flex items-center justify-between">
-            <span>NaOH + KHP</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono">pH {{ currentPH.toFixed(2)
-            }}</span>
-          </h3>
-        </div>
+      <!-- Stockroom Sidebar (Top Right) -->
+      <div class="absolute top-20 right-6">
+        <StockroomSidebar />
       </div>
     </div>
   </div>

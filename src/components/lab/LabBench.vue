@@ -12,7 +12,8 @@ import { LabMaterials } from '@/assets/design/materials'
     <!-- Bench Top -->
     <TresMesh :position="[0, 0.9, 0]" receive-shadow cast-shadow>
       <TresBoxGeometry :args="[4, 0.1, 2]" />
-      <TresMeshStandardMaterial v-bind="LabMaterials.benchStone" />
+      <TresMeshStandardMaterial v-bind="LabMaterials.benchStone" :polygonOffset="true" :polygonOffsetFactor="4"
+        :polygonOffsetUnits="4" />
     </TresMesh>
 
     <!-- Bench Legs -->

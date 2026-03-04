@@ -1,13 +1,18 @@
-import type { MeshStandardMaterialParameters } from "three";
+import type { MeshStandardMaterialParameters, MeshPhysicalMaterialParameters } from "three";
 
-export const LabMaterials: Record<string, MeshStandardMaterialParameters> = {
+export const LabMaterials: Record<
+  string,
+  MeshStandardMaterialParameters | MeshPhysicalMaterialParameters
+> = {
   glass: {
     color: "#ffffff",
     transparent: true,
-    opacity: 0.4, // Increased from 0.2
-    roughness: 0.01,
-    metalness: 0.3, // Added some reflectivity
-  },
+    opacity: 0.2,
+    roughness: 0.1,
+    metalness: 0.1,
+    transmission: 0.9,
+    thickness: 0.5,
+  } as MeshPhysicalMaterialParameters,
   liquidBase: {
     color: "#ffffff",
     roughness: 0,

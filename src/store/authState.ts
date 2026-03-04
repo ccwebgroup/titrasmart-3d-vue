@@ -40,9 +40,8 @@ export const useAuthState = defineStore("auth", () => {
       console.error("Auth initialization failed:", error);
     } finally {
       // Small delay to ensure reactivity settles before we unblock navigation
-      setTimeout(() => {
-        isLoading.value = false;
-      }, 50);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      isLoading.value = false;
     }
   }
 

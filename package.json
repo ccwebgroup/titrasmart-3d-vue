@@ -17,11 +17,14 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.53.1",
+    "@babylonjs/loaders": "^8.53.1",
     "@supabase/supabase-js": "^2.98.0",
     "@tresjs/cientos": "^5.4.0",
     "@tresjs/core": "^5.5.0",
     "@vueuse/core": "^14.2.1",
     "clsx": "^2.1.1",
+    "gsap": "^3.14.2",
     "lucide-vue-next": "^0.576.0",
     "pinia": "^3.0.4",
     "radix-vue": "^1.9.17",

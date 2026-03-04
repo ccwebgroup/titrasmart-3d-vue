@@ -6,14 +6,42 @@ import type { Session, Log } from "../types";
  * This class ensures that all titration-related data is persisted asynchronously.
  */
 export class LabService {
+  private readonly SESSION_KEY = "titrasmart_session_id";
+
   /**
-   * Initializes a new session for a user.
+   * Gets an existing incomplete session or creates a new one.
+   * Persists the session_id in localStorage to survive page reloads.
    */
-  async startSession(
-    userId: string,
-    khpMass: number,
-    targetMolarity: number,
-  ): Promise<string | null> {
+  async getOrCreateSession(khpMass: number, targetMolarity: number): Promise<string | null> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      console.error("[LabService] No active auth session.");
+      return null;
+    }
+
+    // 1. Check localStorage for a persisted session
+    const cachedId = localStorage.getItem(this.SESSION_KEY);
+    if (cachedId) {
+      const { data: existing } = await supabase
+        .from("lab_sessions")
+        .select("id, is_completed")
+        .eq("id", cachedId)
+        .eq("user_id", userId)
+        .single();
+
+      if (existing && !existing.is_completed) {
+        console.log(`[LabService] Reusing session ${cachedId}`);
+        return existing.id;
+      }
+      // Stale or completed — clear it
+      localStorage.removeItem(this.SESSION_KEY);
+    }
+
+    // 2. Fallback: Create a new session
     const { data, error } = await supabase
       .from("lab_sessions")
       .insert([
@@ -28,10 +56,11 @@ export class LabService {
       .single();
 
     if (error) {
-      console.error("Failed to start session:", error);
+      console.error("[LabService] Failed to start session:", error);
       return null;
     }
 
+    localStorage.setItem(this.SESSION_KEY, data.id);
     return data.id;
   }
 
@@ -39,10 +68,23 @@ export class LabService {
    * Persists a batch of titration logs efficiently.
    */
   async logTitrationStep(logs: Log[]): Promise<boolean> {
-    const { error } = await supabase.from("titration_logs").insert(logs);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      console.error("[LabService] Cannot log steps without an auth session.");
+      return false;
+    }
+
+    // Ensure all logs have the correct userId before inserting
+    const logsWithUser = logs.map((l) => ({ ...l, user_id: userId }));
+
+    const { error } = await supabase.from("titration_logs").insert(logsWithUser);
 
     if (error) {
-      console.error("Failed to log titration steps:", error);
+      console.error("[LabService] Failed to log titration steps:", error);
       return false;
     }
 
@@ -55,16 +97,16 @@ export class LabService {
   async completeSession(sessionId: string): Promise<boolean> {
     const { error } = await supabase
       .from("lab_sessions")
-      .update({
-        is_completed: true,
-      })
+      .update({ is_completed: true })
       .eq("id", sessionId);
 
     if (error) {
-      console.error("Failed to complete session:", error);
+      console.error("[LabService] Failed to complete session:", error);
       return false;
     }
 
+    // Clear localStorage so next visit creates a fresh session
+    localStorage.removeItem(this.SESSION_KEY);
     return true;
   }
 
@@ -79,7 +121,7 @@ export class LabService {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Failed to fetch session logs:", error);
+      console.error("[LabService] Failed to fetch session logs:", error);
       return [];
     }
 
